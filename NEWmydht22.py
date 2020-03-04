@@ -1,3 +1,5 @@
+#! /usr/bin/env python3
+
 import Adafruit_DHT
 import time
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTShadowClient
@@ -53,16 +55,23 @@ GPIO.setup(channel, GPIO.IN)
 
 
 while True:
-	humidity, temperature = Adafruit_DHT.read(DHT_SENSOR, DHT_PIN)
+	humidity,temperature = Adafruit_DHT.read(DHT_SENSOR, DHT_PIN)
 	if humidity is not None and temperature is not None:
-		myDeviceShadow.shadowUpdate(
-		'{"state":{"reported":{"temperature":"ok"}}}',
-		myShadowUpdateCallback, 5)
-	else:
-		myDeviceShadow.shadowUpdate(
-		'{"state":{"reported":{"temperature":"missing"}}}',
-		myShadowUpdateCallback, 5)
+		temperature = float(temperature) * 1.8 + 32
 
-	time.sleep(3);
+		payload = {
+			'state': {
+				'reported': {
+					'temperature': temperature,
+					'humidity': humidity
+				}
+			}
+		}
+
+		json_encoded_payload = json.dumps(payload)
+
+		myDeviceShadow.shadowUpdate(json_encoded_payload, myShadowUpdateCallback, 5)
+
+		time.sleep(1);
 
 GPIO.cleanup()
